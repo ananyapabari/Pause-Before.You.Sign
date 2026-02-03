@@ -125,4 +125,4 @@ Write a short abstract
 
 Create a folder structure
 
-Start with the Flask app skeleton
+Start with the Flask app skeleton.
