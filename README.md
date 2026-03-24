@@ -1,128 +1,156 @@
-# Pause-Before.You.Sign
-A cybersecurity-based risk assessment system that helps users evaluate job and internship offers before committing or signing.
+# Pause - Before You Sign
 
-Overview
+Before you sign.
 
-Pause – Before You Sign is a cybersecurity-based risk assessment system designed to help users evaluate job and internship offers before committing or signing. With the rise of online hiring, social engineering–based employment scams have become increasingly sophisticated, often appearing legitimate during initial interactions.
+Pause is a cybersecurity-focused web platform that helps users evaluate the trustworthiness of job and internship offers. The platform performs risk assessment using technical and behavioral indicators and returns a risk score with explanations.
 
-This project does not attempt to guarantee scam detection. Instead, it provides risk-based analysis using multiple technical and contextual signals, helping users make more informed and cautious decisions.
+The system does not claim to automatically detect scams.
 
-Motivation
+## Tech Stack
 
-Online job and internship platforms have become a primary target for social engineering attacks. Students and fresh graduates are particularly vulnerable due to limited industry exposure and urgency to secure opportunities.
+- Frontend: React (Vite), React Router, Axios
+- Backend: Python Flask REST API, Flask-CORS, Flask-SQLAlchemy
+- Auth: JWT-style token structure (development-safe placeholder)
+- Database: PostgreSQL via Flask-SQLAlchemy
 
-Existing verification methods are mostly manual, inconsistent, and rely heavily on personal judgment. There is a clear need for a structured, technical approach that assists users in identifying potential risks early in the engagement process.
+## Project Structure
 
-Problem Statement
+```
+pause/
+	backend/
+		app.py
+		config.py
+		models/
+		routes/
+		services/
+		utils/
+	frontend/
+		src/
+			components/
+			pages/
+			services/
+			styles/
+```
 
-Fake job and internship offers often appear legitimate during early stages, using professional language, realistic timelines, and fabricated digital presence. There is currently no accessible tool that helps users systematically assess the risk of such offers before committing, signing documents, or making payments.
+## Backend API
 
-Proposed Solution
+### Auth
 
-Pause provides a multi-signal risk assessment by analyzing user-submitted offer details. Instead of relying on a single indicator, the system evaluates infrastructure legitimacy, recruiter identity consistency, and offer structure to produce an explainable risk score.
+- `POST /auth/register`
+	- Body: `name`, `email`, `password`
+- `POST /auth/login`
+	- Body: `email`, `password`
+	- Returns: token + user profile
 
-The system is designed to support decision-making rather than replace human judgment.
+### Analysis
 
-Key Features
+- `POST /analysis/analyze` (requires Bearer token)
+	- Body: `companyName`, `jobDescription`, `recruiterEmail`, `companyWebsite`
+	- Returns: `risk_score`, `risk_level`, `reasons`, `meta`
+- `GET /analysis/history` (requires Bearer token)
 
-User-submitted job or internship offer analysis
+### Admin
 
-Infrastructure risk checks (domain age, HTTPS, domain patterns)
+- `GET /admin/dashboard` (admin token)
+- `GET /admin/rules` (admin token)
+- `PUT /admin/rules/<rule_name>` (admin token)
+- `GET /admin/logs` (admin token)
 
-Recruiter identity and email consistency verification
+## Risk Engine Rules
 
-Offer content structure and completeness analysis
+Implemented in `pause/backend/services/risk_engine.py`:
 
-Cumulative risk scoring (Low / Medium / High)
+- Domain age < 90 days: +40
+- Domain age < 1 year: +20
+- Free email domain (`gmail.com`, `yahoo.com`, `outlook.com`): +20
+- Suspicious wording (`urgent`, `payment`, `fee`, `immediately`): +15
+- Website not HTTPS: +15
 
-Explainable risk breakdown in plain language
+Risk levels:
 
-Safety guidance based on assessed risk
+- 0-25: LOW
+- 26-60: MEDIUM
+- 61+: HIGH
 
-System Architecture (High Level)
+Domain age is currently deterministic mock logic (ready for future WHOIS integration).
 
-User submits offer details
+## Database Schema (PostgreSQL + Flask-SQLAlchemy)
 
-Input validation and preprocessing
+The following table schemas are mapped to SQLAlchemy models/repositories:
 
-Independent analysis modules evaluate risk signals
+- `users`
+- `offer_analyses`
+- `risk_rules`
+- `audit_logs`
 
-Risk scoring engine aggregates signals
+## Run Instructions
 
-System outputs risk level with explanations and guidance
+### Backend
 
-The architecture is modular, allowing future expansion without redesign.
+1. Open terminal in `pause/backend`
+2. Install dependencies:
 
-Technologies Used
+	 ```bash
+	 pip install flask flask-cors flask-sqlalchemy psycopg2-binary
+	 ```
 
-Backend: Python, Flask
+	 Or use:
 
-Infrastructure Analysis: WHOIS lookup, SSL validation
+	 ```bash
+	 pip install -r requirements.txt
+	 ```
 
-Data Handling: JSON / CSV (lightweight datasets)
+3. Run API:
 
-Security Practices: Input validation, modular rule-based analysis
+	 ```bash
+	 python app.py
+	 ```
 
-Risk Assessment Philosophy
+4. Backend runs on `http://localhost:5000`
 
-Pause follows a defense-in-depth approach. No single indicator determines whether an offer is safe or unsafe. Instead, multiple weak signals are combined to assess overall risk.
+### Create tables manually (if needed)
 
-The system intentionally avoids binary decisions and instead communicates uncertainty transparently to the user.
+```python
+from app import create_app, db
 
-Limitations
+app = create_app()
+with app.app_context():
+    db.create_all()
+```
 
-The system cannot guarantee scam detection at the first point of contact
+Admin test account (seeded on first login call):
 
-Risk assessment depends on the availability of user-provided information
+- Email: `admin@pause.local`
+- Password: `admin123`
 
-Newly established legitimate companies may appear higher risk initially
+### Frontend
 
-These limitations are acknowledged as part of responsible cybersecurity design.
+1. Open terminal in `pause/frontend`
+2. Install dependencies:
 
-Future Scope
+	 ```bash
+	 npm install
+	 ```
 
-Stage-based risk assessment across multiple interactions
+3. Start dev server:
 
-Machine learning–assisted classification
+	 ```bash
+	 npm run dev
+	 ```
 
-Browser extension for quick checks
+4. Frontend runs on `http://localhost:5173`
 
-Scam reporting and shared intelligence database
+## Current State
 
-Expanded infrastructure and identity verification
+This repository is intentionally structured like a partially completed production system:
 
-Ethical Considerations
+- Modular services and routes
+- Auth and role-protected endpoints
+- Explainable risk engine
+- Admin rule management and audit logging flow
+- Frontend user and admin paths
 
-Only user-submitted data is analyzed
+Planned next phase:
 
-No scraping of job portals or social platforms
-
-No monitoring of private communications
-
-User privacy and data minimization are prioritized
-
-How to Run (Basic)
-
-Instructions for setup and execution will be added as development progresses.
-
-License
-
-This project is released under the MIT License.
-
-References
-
-OWASP – Social Engineering
-
-NIST Cybersecurity Framework
-
-CERT-In Cyber Fraud Advisories
-
-If you want next, we can:
-
-Trim this for college submission
-
-Write a short abstract
-
-Create a folder structure
-
-Start with the Flask app skeleton.
+- Production-grade JWT library and key rotation
+- Input validation hardening and test suite coverage

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+*.env
+pause/backend/.env
+
+# Node / frontend
+node_modules/
+pause/frontend/node_modules/
+pause/frontend/dist/
+
+# VS Code / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
