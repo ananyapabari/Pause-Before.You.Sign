@@ -8,12 +8,14 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import NewOfferPage from "./pages/NewOfferPage";
 import ResultPage from "./pages/ResultPage";
+import ReportScamPage from "./pages/ReportScamPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import RuleManagement from "./pages/RuleManagement";
 import AuditLogs from "./pages/AuditLogs";
 import UsersManagement from "./pages/UsersManagement";
 import FlaggedOffers from "./pages/FlaggedOffers";
+import AdminScamReportsPage from "./pages/AdminScamReportsPage";
 
 const getStoredUser = () => {
   const raw = localStorage.getItem("pause_user");
@@ -74,6 +76,16 @@ function App() {
         }
       />
       <Route
+        path="/report-scam"
+        element={
+          <ProtectedRoute>
+            <UserOnlyRoute>
+              <ReportScamPage />
+            </UserOnlyRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
@@ -127,6 +139,16 @@ function App() {
           <ProtectedRoute>
             <AdminRoute>
               <FlaggedOffers />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/scam-reports"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminScamReportsPage />
             </AdminRoute>
           </ProtectedRoute>
         }

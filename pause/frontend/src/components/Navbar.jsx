@@ -4,11 +4,13 @@ import AppLogo from "./AppLogo";
 const navItems = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "New Offer Check", to: "/new-check" },
+  { label: "Report Scam", to: "/report-scam" },
   { label: "Profile", to: "/profile" },
 ];
 
 const adminNavItems = [
   { label: "Admin Dashboard", to: "/admin" },
+  { label: "Reported Scams", to: "/admin/scam-reports" },
   { label: "Users", to: "/admin/users" },
   { label: "Flagged Offers", to: "/admin/flagged-offers" },
   { label: "Rules", to: "/admin/rules" },

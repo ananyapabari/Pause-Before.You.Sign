@@ -27,6 +27,9 @@ export default function AdminDashboard() {
     <Layout title="Admin Dashboard" subtitle="Operational overview for risk analysis activity.">
       <header className="topbar">
         <div className="actions">
+          <Link className="btn-secondary" to="/admin/scam-reports">
+            Reported Scams
+          </Link>
           <Link className="btn-secondary" to="/admin/users">
             Users
           </Link>

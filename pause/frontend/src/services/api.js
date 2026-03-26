@@ -28,8 +28,15 @@ export const analysisApi = {
   getHistory: () => api.get("/analysis/history"),
 };
 
+export const scamApi = {
+  reportScam: (payload) => api.post("/report-scam", payload),
+  getReportCount: (params) => api.get("/scam-reports/count", { params }),
+};
+
 export const adminApi = {
   getDashboard: () => api.get("/admin/dashboard"),
+  getScamReports: () => api.get("/admin/scam-reports"),
+  reviewScamReport: (payload) => api.post("/admin/scam-reports/review", payload),
   getRules: () => api.get("/admin/rules"),
   updateRule: (ruleName, payload) => api.put(`/admin/rules/${ruleName}`, payload),
   getLogs: () => api.get("/admin/logs"),

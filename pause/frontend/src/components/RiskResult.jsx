@@ -13,13 +13,28 @@ export default function RiskResult({ result }) {
     return null;
   }
 
-  const { risk_level, risk_score, reasons = [], ai_explanation, scam_type } = result;
+  const {
+    risk_level,
+    risk_score,
+    reasons = [],
+    ai_explanation,
+    scam_type,
+    is_previously_reported,
+    reports_count,
+  } = result;
   const normalized = risk_level?.toUpperCase() || "LOW";
   const recommendationText =
     ai_explanation?.trim() || recommendationByLevel[normalized] || recommendationByLevel.MEDIUM;
 
   return (
     <section className="card panel stack">
+      {is_previously_reported ? (
+        <div className="warning-banner" role="alert">
+          <strong>⚠ This offer has been reported as a scam by other users.</strong>
+          {reports_count ? <span> Reported by {reports_count} user(s).</span> : null}
+        </div>
+      ) : null}
+
       <h2>Risk Level</h2>
       <div className={`risk-indicator risk-indicator-${normalized.toLowerCase()}`}>
         <RiskBadge level={normalized} />

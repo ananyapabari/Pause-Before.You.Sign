@@ -7,6 +7,7 @@ export default function ResultPage() {
   const location = useLocation();
   const result = location.state?.result;
   const companyName = location.state?.companyName;
+  const analyzedForm = location.state?.analyzedForm;
 
   if (!result) {
     return (
@@ -30,6 +31,19 @@ export default function ResultPage() {
         </button>
         <Link className="btn-primary" to="/dashboard">
           Dashboard
+        </Link>
+        <Link
+          className="btn-danger"
+          to="/report-scam"
+          state={{
+            initialReport: {
+              companyName: companyName || analyzedForm?.companyName || "",
+              email: analyzedForm?.recruiterEmail || "",
+              website: analyzedForm?.companyWebsite || "",
+            },
+          }}
+        >
+          Report this Offer
         </Link>
       </div>
       <RiskResult result={result} />

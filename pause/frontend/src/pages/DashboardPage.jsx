@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Cell,
   Legend,
@@ -68,6 +69,18 @@ export default function DashboardPage() {
         <StatCard label="High Risk Detections" value={counts.HIGH} tone="high" />
         <StatCard label="Medium Risk" value={counts.MEDIUM} tone="medium" />
         <StatCard label="Low Risk" value={counts.LOW} tone="low" />
+      </section>
+
+      <section className="card panel">
+        <h2>Quick Actions</h2>
+        <div className="actions">
+          <Link to="/new-check" className="btn-primary">
+            Check New Offer
+          </Link>
+          <Link to="/report-scam" className="btn-secondary">
+            Report Scam Directly
+          </Link>
+        </div>
       </section>
 
       <section className="grid-two">

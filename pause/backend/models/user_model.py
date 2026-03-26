@@ -27,6 +27,12 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     offers = db.relationship("OfferAnalysis", back_populates="user", cascade="all, delete-orphan")
+    scam_reports = db.relationship(
+        "ScamReport",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="ScamReport.user_id",
+    )
 
     @property
     def verification_token(self) -> Optional[str]:

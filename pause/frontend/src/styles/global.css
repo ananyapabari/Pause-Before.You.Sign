@@ -361,6 +361,15 @@ input[type="checkbox"] {
   font-weight: 600;
 }
 
+.warning-banner {
+  border: 1px solid #e6b955;
+  background: #fff5db;
+  color: #6f4a00;
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+}
+
 .error {
   color: #9a2f2f;
   font-weight: 600;
@@ -879,6 +888,29 @@ input[type="checkbox"] {
 
 .profile-activity-table tbody tr:hover td {
   background: #eef4f3;
+}
+
+.count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eef4f3;
+  color: #2f5c5b;
+  font-weight: 700;
+}
+
+.count-pill-high {
+  background: rgba(179, 67, 62, 0.18);
+  color: #8f2723;
+}
+
+.admin-metric-text {
+  font-size: 1rem;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 @media (max-width: 980px) {

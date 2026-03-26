@@ -56,6 +56,8 @@ def analyze_offer():
             "risk_score": result["risk_score"],
             "risk_level": result["risk_level"],
             "scam_type": result["scam_type"],
+            "is_previously_reported": result["is_previously_reported"],
+            "reports_count": result["reports_count"],
             "reasons": result["reasons"],
             "ai_explanation": result["ai_explanation"],
             "meta": result["meta"],

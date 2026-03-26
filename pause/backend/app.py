@@ -29,6 +29,21 @@ def _ensure_offer_analysis_columns() -> None:
     db.session.commit()
 
 
+def _ensure_scam_report_columns() -> None:
+    """Add scam report review columns when older databases are missing them."""
+    statements = [
+        "ALTER TABLE scam_reports ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'pending'",
+        "ALTER TABLE scam_reports ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE scam_reports ADD COLUMN IF NOT EXISTS reviewed_by INTEGER",
+    ]
+    for statement in statements:
+        db.session.execute(text(statement))
+    db.session.execute(
+        text("UPDATE scam_reports SET status = 'pending' WHERE status IS NULL")
+    )
+    db.session.commit()
+
+
 def create_app() -> Flask:
     """Create and configure the Flask app instance."""
     app = Flask(__name__)
@@ -48,10 +63,12 @@ def create_app() -> Flask:
     from routes.admin_routes import admin_bp
     from routes.analysis_routes import analysis_bp
     from routes.auth_routes import auth_bp
+    from routes.scam_routes import scam_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(analysis_bp, url_prefix="/analysis")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(scam_bp)
 
     with app.app_context():
         from models.rule_model import RiskRuleRepository
@@ -59,6 +76,7 @@ def create_app() -> Flask:
         db.create_all()
         try:
             _ensure_offer_analysis_columns()
+            _ensure_scam_report_columns()
         except Exception as exc:
             db.session.rollback()
             print(f"[DB_MIGRATION_WARNING] Could not apply optional schema updates: {exc}")

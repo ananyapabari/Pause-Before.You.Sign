@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
 
+from models.scam_report_model import ScamReportRepository
 from models.rule_model import RiskRuleRepository
 from services.ai_service import AIService
 from services.domain_service import DomainService
@@ -88,6 +89,11 @@ class RiskEngine:
             default_weight=30,
             reason="Website domain appears to imitate a known large company",
         ),
+        "previously_reported_scam": RiskSignal(
+            name="previously_reported_scam",
+            default_weight=45,
+            reason="Previously reported as scam",
+        ),
     }
 
     def _get_rule_weight(self, signal_name: str, fallback: int) -> int:
@@ -120,6 +126,17 @@ class RiskEngine:
 
         website_domain = extract_domain(company_website)
         email_domain = extract_domain(recruiter_email)
+
+        reports_count = ScamReportRepository.count_by_domain_or_email(
+            domain=website_domain,
+            email=email_domain,
+        )
+        is_previously_reported = reports_count > 0
+        if is_previously_reported:
+            signal = self.SIGNALS["previously_reported_scam"]
+            score += self._get_rule_weight(signal.name, signal.default_weight)
+            reasons.append(signal.reason)
+            triggered_signals.append(signal.name)
 
         try:
             domain_metadata = self._call_with_timeout(
@@ -216,12 +233,16 @@ class RiskEngine:
             "risk_score": score,
             "risk_level": self._to_level(score),
             "scam_type": scam_type,
+            "is_previously_reported": is_previously_reported,
+            "reports_count": reports_count,
             "reasons": reasons,
             "ai_explanation": ai_explanation,
             "meta": {
                 "domain_name": website_domain,
                 "website_domain": website_domain,
                 "email_domain": email_domain,
+                "is_previously_reported": is_previously_reported,
+                "reports_count": reports_count,
                 "domain_age_days": domain_age_days,
                 "domain_creation_date": domain_metadata.get("creation_date"),
                 "domain_lookup_source": domain_metadata.get("source"),

@@ -19,6 +19,7 @@ export default function NewOfferPage() {
         state: {
           result: response.data,
           companyName: form.companyName,
+          analyzedForm: form,
         },
       });
     } catch (requestError) {

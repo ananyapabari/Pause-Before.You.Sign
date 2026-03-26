@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 from models.audit_log_model import AuditLogRepository
 from models.offer_model import OfferAnalysisRepository
 from models.rule_model import RiskRuleRepository
+from models.scam_report_model import ScamReportRepository
 from models.user_model import UserRepository
 from utils.jwt_utils import admin_required
 
@@ -235,3 +236,86 @@ def list_logs():
         payload["admin_name"] = admin_user.name if admin_user else f"Admin #{log.admin_id}"
         logs.append(payload)
     return jsonify(logs[::-1])
+
+
+@admin_bp.get("/scam-reports")
+@admin_required
+def list_scam_reports():
+    reports = ScamReportRepository.list_all()
+    domain_counts, email_counts = ScamReportRepository.domain_email_counts()
+
+    serialized_reports = []
+    for report in reports:
+        source_count = 0
+        if report.domain:
+            source_count = domain_counts.get(report.domain, 0)
+        elif report.email:
+            source_count = email_counts.get(report.email, 0)
+
+        serialized_reports.append(
+            {
+                "id": report.id,
+                "company_name": report.company_name,
+                "domain": report.domain,
+                "email": report.email,
+                "reason": report.reason,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+                "user_id": report.user_id,
+                "status": report.status,
+                "report_count": source_count,
+            }
+        )
+
+    most_reported_domain = None
+    most_reported_domain_count = 0
+    if domain_counts:
+        most_reported_domain, most_reported_domain_count = max(
+            domain_counts.items(), key=lambda item: item[1]
+        )
+
+    grouped_domains = [
+        {"domain": domain, "report_count": count}
+        for domain, count in sorted(domain_counts.items(), key=lambda item: item[1], reverse=True)
+    ]
+
+    return jsonify(
+        {
+            "reports": serialized_reports,
+            "grouped_domains": grouped_domains,
+            "summary": {
+                "total_reports": len(serialized_reports),
+                "most_reported_domain": most_reported_domain,
+                "most_reported_domain_count": most_reported_domain_count,
+                "recent_reports": serialized_reports[:5],
+            },
+        }
+    )
+
+
+@admin_bp.post("/scam-reports/review")
+@admin_required
+def review_scam_report():
+    payload = request.get_json(silent=True) or {}
+    report_id = payload.get("report_id")
+
+    if report_id is None:
+        return jsonify({"error": "report_id is required"}), 400
+
+    try:
+        report_id = int(report_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "report_id must be an integer"}), 400
+
+    report = ScamReportRepository.mark_reviewed(report_id, request.user["sub"])
+    if not report:
+        return jsonify({"error": "Scam report not found"}), 404
+
+    AuditLogRepository.add(
+        admin_id=request.user["sub"],
+        action="REVIEW_SCAM_REPORT",
+        target=f"scam_report:{report_id}",
+        target_type="scam_report",
+        details="status=reviewed",
+    )
+
+    return jsonify(report.to_dict())
