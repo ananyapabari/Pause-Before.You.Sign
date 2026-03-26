@@ -1,4 +1,5 @@
 import RiskBadge from "./RiskBadge";
+import { analysisApi } from "../services/api";
 
 const recommendationByLevel = {
   LOW: "This offer shows low immediate risk, but still verify using official company channels.",
@@ -45,6 +46,7 @@ export default function RiskResult({ result }) {
   }
 
   const {
+    id,
     risk_level,
     risk_score,
     reasons = [],
@@ -58,6 +60,29 @@ export default function RiskResult({ result }) {
   const fallbackText =
     ai_explanation?.trim() || recommendationByLevel[normalized] || recommendationByLevel.MEDIUM;
 
+  const handleDownloadPDF = async () => {
+    if (!id) {
+      alert("Unable to download report: Analysis ID not found");
+      return;
+    }
+
+    try {
+      const response = await analysisApi.downloadReport(id);
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `risk_analysis_${result.scam_type || "report"}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download PDF:", error);
+      alert("Failed to download PDF. Please try again.");
+    }
+  };
+
   return (
     <section className="card panel stack">
       {is_previously_reported ? (
@@ -67,7 +92,14 @@ export default function RiskResult({ result }) {
         </div>
       ) : null}
 
-      <h2>Risk Level</h2>
+      <div className="actions-row">
+        <h2>Risk Level</h2>
+        {id ? (
+          <button className="btn-secondary-sm" type="button" onClick={handleDownloadPDF}>
+            📥 Download Report
+          </button>
+        ) : null}
+      </div>
       <div className={`risk-indicator risk-indicator-${normalized.toLowerCase()}`}>
         <RiskBadge level={normalized} />
       </div>

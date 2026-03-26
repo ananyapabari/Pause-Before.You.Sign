@@ -26,7 +26,13 @@ export const authApi = {
 export const analysisApi = {
   analyzeOffer: (payload) => api.post("/analysis/analyze", payload),
   getHistory: () => api.get("/analysis/history"),
+  downloadReport: (analysisId) =>
+    api.get(`/analysis/export-report/${analysisId}`, {
+      responseType: "blob",
+    }),
 };
+
+export { api };
 
 export const scamApi = {
   reportScam: (payload) => api.post("/report-scam", payload),
