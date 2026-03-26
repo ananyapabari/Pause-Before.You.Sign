@@ -12,11 +12,10 @@ const recommendationByLevel = {
 const formatAIExplanation = (text) => {
   if (!text) return null;
 
-  // Split by section headers (SUMMARY, WHY THIS IS RISKY, WHAT THIS MEANS, RECOMMENDATION)
-  const sections = text.split(/\n(?=SUMMARY|WHY THIS IS RISKY|WHAT THIS MEANS|RECOMMENDATION)\n/i);
-  
-  if (sections.length === 1) {
-    // No structured sections found, return as-is
+  // Split by ### markdown headings
+  const sections = text.split(/^###\s+/m).filter(Boolean);
+
+  if (sections.length === 0) {
     return <p className="recommendation">{text}</p>;
   }
 
@@ -24,10 +23,32 @@ const formatAIExplanation = (text) => {
     <div className="ai-explanation-structured">
       {sections.map((section, idx) => {
         const lines = section.trim().split("\n");
-        const header = lines[0];
+        const header = lines[0].trim();
         const content = lines.slice(1).join("\n").trim();
 
         if (!header || !content) return null;
+
+        // Check if content has bullet points
+        const hasBullets = /^\s*\*/m.test(content);
+
+        if (hasBullets) {
+          // Parse bullet points into a list
+          const items = content
+            .split("\n")
+            .filter((line) => line.trim())
+            .map((line) => line.replace(/^\s*\*\s*/, ""));
+
+          return (
+            <div key={idx} className="explanation-section">
+              <h4>{header}</h4>
+              <ul className="explanation-list">
+                {items.map((item, itemIdx) => (
+                  <li key={itemIdx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        }
 
         return (
           <div key={idx} className="explanation-section">

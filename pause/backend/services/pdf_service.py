@@ -188,10 +188,50 @@ class PDFService:
             analysis_heading = Paragraph("AI Analysis", heading_style)
             elements.append(analysis_heading)
 
-            explanation_text = Paragraph(
-                ai_explanation.replace("\n", "<br/>"), body_style
-            )
-            elements.append(explanation_text)
+            # Parse markdown sections (### heading format)
+            sections = ai_explanation.split("###")
+            for section in sections:
+                section = section.strip()
+                if not section:
+                    continue
+
+                lines = section.split("\n", 1)
+                section_header = lines[0].strip()
+                section_content = lines[1].strip() if len(lines) > 1 else ""
+
+                if section_header:
+                    # Add section subheading
+                    section_title = Paragraph(
+                        section_header,
+                        ParagraphStyle(
+                            "AnalysisSubheading",
+                            parent=styles["Normal"],
+                            fontSize=10,
+                            textColor=colors.HexColor("#2f6f6d"),
+                            fontName="Helvetica-Bold",
+                            spaceAfter=4,
+                            spaceBefore=6,
+                        ),
+                    )
+                    elements.append(section_title)
+
+                if section_content:
+                    # Check if content has bullet points
+                    if section_content.startswith("*"):
+                        # Parse bullet points
+                        bullet_items = [
+                            item.strip().lstrip("*").strip()
+                            for item in section_content.split("\n")
+                            if item.strip()
+                        ]
+                        for item in bullet_items:
+                            bullet_text = Paragraph(f"• {item}", body_style)
+                            elements.append(bullet_text)
+                    else:
+                        # Regular paragraph content
+                        content_text = Paragraph(section_content, body_style)
+                        elements.append(content_text)
+
             elements.append(Spacer(1, 0.1 * inch))
 
         # Community Reports section

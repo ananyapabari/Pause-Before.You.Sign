@@ -131,54 +131,50 @@ class AIService:
         scam_type: str = "Unknown",
         company_name: str = "",
     ) -> str:
-        """Build an improved structured prompt for Gemini API."""
+        """Build a clean, markdown-structured prompt for Gemini API."""
         reasons_text = (
-            "\n".join([f"  • {reason}" for reason in reasons])
+            "\n".join([f"* {reason}" for reason in reasons])
             if reasons
-            else "  • No specific signals detected"
+            else "* No specific signals detected"
         )
-        company_mention = f"Company: {company_name}" if company_name else ""
 
         prompt = f"""You are a cybersecurity assistant helping users evaluate job offers for potential scams.
 
-Analyze the following job offer and generate a structured, helpful explanation:
+Based on the following:
 
-{company_mention}
 Risk Level: {risk_level}
-Detected Scam Type: {scam_type}
-
-Detected Risk Signals:
-{reasons_text}
+Scam Type: {scam_type}
+Detected Signals: {reasons_text}
 
 Job Description:
 {job_description[:600]}
 
----
+Generate a response in STRICT FORMAT:
 
-Generate a clear, structured explanation with these sections:
+### Summary
 
-1. SUMMARY
-Provide 1-2 sentences explaining whether this offer is risky and why.
+(2-3 sentences explaining overall risk)
 
-2. WHY THIS IS RISKY
-Explain each detected signal in simple, non-technical terms. Help the user understand what each red flag means.
+### Why this is risky
 
-3. WHAT THIS MEANS
-Describe the possible scam behavior or fraud risk the user might face if they proceed.
+{reasons_text}
 
-4. RECOMMENDATION
-Give clear, actionable advice on what the user should do.
+### What this means
 
----
+(Explain scam behavior simply)
 
-Guidelines:
-- Use simple, clear language suitable for all users
-- Be specific about the risks mentioned
-- Avoid generic warnings; focus on the actual detected signals
-- Keep explanations concise but meaningful
-- Be empathetic and helpful, not alarmist
+### Recommendation
 
-Format your response with clear section headers (SUMMARY, WHY THIS IS RISKY, WHAT THIS MEANS, RECOMMENDATION)."""
+(What user should do)
+
+IMPORTANT:
+- Use proper headings exactly as shown (### for all section headers)
+- Use bullet points under 'Why this is risky'
+- Keep tone natural and helpful
+- Do NOT return everything in one paragraph
+- Be specific about detected signals, not generic
+- Use simple, clear language for all users
+- Be empathetic and actionable"""
 
         return prompt
     
@@ -189,19 +185,29 @@ Format your response with clear section headers (SUMMARY, WHY THIS IS RISKY, WHA
         """Return a structured fallback explanation when AI is not available."""
         if not reasons:
             return (
-                "SUMMARY\n"
+                "### Summary\n\n"
                 "This offer does not show major scam indicators, but caution is still recommended.\n\n"
-                "RECOMMENDATION\n"
+                "### Recommendation\n\n"
                 "Verify company details through official websites and trusted channels before sharing any personal information."
             )
 
         # Build structured explanation from reasons
-        reasons_summary = " ".join(reasons[:3])
+        reasons_bullets = "\n".join([f"* {reason}" for reason in reasons[:3]])
+        
+        if risk_level == "HIGH":
+            recommendation = "Do not proceed with this offer. Verify the company's legitimacy through official channels before responding to any requests."
+        elif risk_level == "MEDIUM":
+            recommendation = "Exercise caution with this offer. Independently verify the recruiter's identity and company details before proceeding."
+        else:
+            recommendation = "This offer appears relatively safe, but always verify company details through official channels before sharing sensitive information."
+        
         return (
-            f"SUMMARY\n"
+            f"### Summary\n\n"
             f"This offer is marked as {risk_level} risk. Detected type: {scam_type}.\n\n"
-            f"WHY THIS IS RISKY\n"
-            f"{reasons_summary}\n\n"
-            f"RECOMMENDATION\n"
-            f"Do not proceed with this offer. Verify the company's legitimacy through official channels before responding to any requests."
+            f"### Why this is risky\n\n"
+            f"{reasons_bullets}\n\n"
+            f"### What this means\n\n"
+            f"These signals suggest potential fraudulent activity that could put your personal information or finances at risk.\n\n"
+            f"### Recommendation\n\n"
+            f"{recommendation}"
         )
