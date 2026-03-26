@@ -210,11 +210,10 @@ class RiskEngine:
         # Classify scam type and generate AI explanation.
         # Skip external AI calls when no risk signals are present to keep responses fast and reliable.
         scam_type = classify_scam_type(triggered_signals)
+        risk_level = self._to_level(score)
+        
         if not reasons:
-            ai_explanation = (
-                "No major scam indicators were detected in this offer. "
-                "Still verify company details through trusted channels before sharing personal information."
-            )
+            ai_explanation = AIService._get_fallback_explanation([], risk_level, scam_type)
         else:
             try:
                 ai_explanation = self._call_with_timeout(
@@ -222,16 +221,23 @@ class RiskEngine:
                     self.AI_TIMEOUT_SECONDS,
                     reasons,
                     job_description,
+                    risk_level,
+                    scam_type,
+                    company_name,
                 )
             except TimeoutError:
-                ai_explanation = "This offer appears risky due to multiple suspicious signals."
+                ai_explanation = AIService._get_fallback_explanation(
+                    reasons, risk_level, scam_type
+                )
             except Exception:
-                ai_explanation = "This offer appears risky due to multiple suspicious signals."
+                ai_explanation = AIService._get_fallback_explanation(
+                    reasons, risk_level, scam_type
+                )
 
         return {
             "company_name": company_name,
             "risk_score": score,
-            "risk_level": self._to_level(score),
+            "risk_level": risk_level,
             "scam_type": scam_type,
             "is_previously_reported": is_previously_reported,
             "reports_count": reports_count,

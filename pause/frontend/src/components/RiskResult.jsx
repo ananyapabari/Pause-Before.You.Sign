@@ -8,6 +8,37 @@ const recommendationByLevel = {
     "This offer shows multiple risk signals. Verify the company independently before proceeding.",
 };
 
+const formatAIExplanation = (text) => {
+  if (!text) return null;
+
+  // Split by section headers (SUMMARY, WHY THIS IS RISKY, WHAT THIS MEANS, RECOMMENDATION)
+  const sections = text.split(/\n(?=SUMMARY|WHY THIS IS RISKY|WHAT THIS MEANS|RECOMMENDATION)\n/i);
+  
+  if (sections.length === 1) {
+    // No structured sections found, return as-is
+    return <p className="recommendation">{text}</p>;
+  }
+
+  return (
+    <div className="ai-explanation-structured">
+      {sections.map((section, idx) => {
+        const lines = section.trim().split("\n");
+        const header = lines[0];
+        const content = lines.slice(1).join("\n").trim();
+
+        if (!header || !content) return null;
+
+        return (
+          <div key={idx} className="explanation-section">
+            <h4>{header}</h4>
+            <p>{content}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function RiskResult({ result }) {
   if (!result) {
     return null;
@@ -23,7 +54,8 @@ export default function RiskResult({ result }) {
     reports_count,
   } = result;
   const normalized = risk_level?.toUpperCase() || "LOW";
-  const recommendationText =
+  const formattedExplanation = formatAIExplanation(ai_explanation);
+  const fallbackText =
     ai_explanation?.trim() || recommendationByLevel[normalized] || recommendationByLevel.MEDIUM;
 
   return (
@@ -63,8 +95,8 @@ export default function RiskResult({ result }) {
         <p className="helper-text">No high-confidence indicators were triggered.</p>
       )}
 
-      <h3>Recommendation</h3>
-      <p className="recommendation">{recommendationText}</p>
+      <h3>Analysis</h3>
+      {formattedExplanation || <p className="recommendation">{fallbackText}</p>}
     </section>
   );
 }
