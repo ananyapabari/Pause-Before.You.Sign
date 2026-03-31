@@ -401,6 +401,10 @@ input[type="checkbox"] {
   gap: 0.6rem;
 }
 
+.moderation-filters-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .history-list {
   list-style: none;
   padding: 0;
@@ -418,6 +422,83 @@ input[type="checkbox"] {
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
   background: #ffffff;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: #f2f8f7;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.status-pending {
+  color: #8c6a1f;
+  background: rgba(201, 133, 42, 0.14);
+  border-color: rgba(201, 133, 42, 0.25);
+}
+
+.status-reviewed {
+  color: #1f6a58;
+  background: rgba(43, 140, 90, 0.14);
+  border-color: rgba(43, 140, 90, 0.25);
+}
+
+.status-false-positive {
+  color: #8f2723;
+  background: rgba(179, 67, 62, 0.14);
+  border-color: rgba(179, 67, 62, 0.25);
+}
+
+.btn-reviewed {
+  border-color: #2b8c5a;
+  color: #2b8c5a;
+}
+
+.btn-reviewed:hover {
+  background: rgba(43, 140, 90, 0.1);
+}
+
+.btn-false-positive {
+  border-color: #b3433e;
+  color: #b3433e;
+}
+
+.btn-false-positive:hover {
+  background: rgba(179, 67, 62, 0.1);
+}
+
+.offer-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.offer-review-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.offer-description {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: #2e2e2e;
 }
 
 .risk-chart {
@@ -1008,6 +1089,10 @@ input[type="checkbox"] {
   }
 
   .filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .moderation-filters-row {
     grid-template-columns: 1fr;
   }
 

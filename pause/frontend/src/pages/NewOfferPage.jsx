@@ -23,6 +23,11 @@ export default function NewOfferPage() {
         },
       });
     } catch (requestError) {
+      // Redirect to login if unauthorized (missing/invalid token)
+      if (requestError.response?.status === 401) {
+        navigate("/login");
+        return;
+      }
       setError(requestError.response?.data?.error || "Failed to analyze offer.");
     } finally {
       setLoading(false);

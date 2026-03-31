@@ -28,6 +28,10 @@ class OfferAnalysis(db.Model):
 
     user = db.relationship("User", back_populates="offers")
 
+    @property
+    def status(self) -> str:
+        return self.review_status or "pending"
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -42,6 +46,7 @@ class OfferAnalysis(db.Model):
             "reasons": self.reasons or [],
             "ai_explanation": self.ai_explanation,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "status": self.status,
             "review_status": self.review_status,
             "reviewed_by": self.reviewed_by,
             "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,

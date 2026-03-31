@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from extensions import db
+from utils.domain_utils import extract_domain
 
 
 class ScamReport(db.Model):
@@ -109,6 +110,17 @@ class ScamReportRepository:
             clauses.append(ScamReport.email == email)
 
         return ScamReport.query.filter(db.or_(*clauses)).count()
+
+    @classmethod
+    def count_for_offer_source(
+        cls,
+        *,
+        company_website: str | None,
+        recruiter_email: str | None,
+    ) -> int:
+        domain = extract_domain(company_website or "") if company_website else ""
+        email = (recruiter_email or "").strip().lower()
+        return cls.count_by_domain_or_email(domain=domain, email=email)
 
     @staticmethod
     def list_all() -> list[ScamReport]:

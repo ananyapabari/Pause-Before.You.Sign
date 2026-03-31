@@ -16,6 +16,7 @@ import AuditLogs from "./pages/AuditLogs";
 import UsersManagement from "./pages/UsersManagement";
 import FlaggedOffers from "./pages/FlaggedOffers";
 import AdminScamReportsPage from "./pages/AdminScamReportsPage";
+import AdminOfferDetailsPage from "./pages/AdminOfferDetailsPage";
 
 const getStoredUser = () => {
   const raw = localStorage.getItem("pause_user");
@@ -89,7 +90,9 @@ function App() {
         path="/profile"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            <UserOnlyRoute>
+              <ProfilePage />
+            </UserOnlyRoute>
           </ProtectedRoute>
         }
       />
@@ -144,11 +147,25 @@ function App() {
         }
       />
       <Route
-        path="/admin/scam-reports"
+        path="/admin/reported-offers"
         element={
           <ProtectedRoute>
             <AdminRoute>
               <AdminScamReportsPage />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/scam-reports"
+        element={<Navigate to="/admin/reported-offers" replace />}
+      />
+      <Route
+        path="/admin/offers/:id"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminOfferDetailsPage />
             </AdminRoute>
           </ProtectedRoute>
         }

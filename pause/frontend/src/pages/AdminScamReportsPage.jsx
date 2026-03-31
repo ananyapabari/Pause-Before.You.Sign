@@ -1,54 +1,126 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { adminApi } from "../services/api";
 
 export default function AdminScamReportsPage() {
-  const [reports, setReports] = useState([]);
-  const [summary, setSummary] = useState({
-    total_reports: 0,
-    most_reported_domain: null,
-    most_reported_domain_count: 0,
-    recent_reports: [],
-  });
-  const [groupedDomains, setGroupedDomains] = useState([]);
+  const navigate = useNavigate();
+  const [offers, setOffers] = useState([]);
   const [error, setError] = useState("");
-  const [busyReportId, setBusyReportId] = useState(null);
+  const [success, setSuccess] = useState("");
+  const [busyOfferId, setBusyOfferId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRisk, setFilterRisk] = useState("all");
+  const [sortBy, setSortBy] = useState("priority");
 
-  const loadReports = async () => {
+  const loadOffers = async () => {
     try {
       setError("");
-      const response = await adminApi.getScamReports();
-      setReports(response.data?.reports || []);
-      setSummary(response.data?.summary || {});
-      setGroupedDomains(response.data?.grouped_domains || []);
+      setSuccess("");
+      const response = await adminApi.getReportedOffers();
+      setOffers(response.data || []);
     } catch (requestError) {
-      setError(requestError.response?.data?.error || "Failed to load reported scams dashboard.");
+      setError(requestError.response?.data?.error || "Failed to load reported offers.");
     }
   };
 
   useEffect(() => {
-    loadReports();
+    loadOffers();
   }, []);
 
-  const handleMarkReviewed = async (reportId) => {
+  const handleAction = async (offerId, action) => {
     try {
-      setBusyReportId(reportId);
-      await adminApi.reviewScamReport({ report_id: reportId });
-      await loadReports();
+      setBusyOfferId(offerId);
+      await adminApi.reviewOffer({ offer_id: offerId, action });
+      setOffers((current) =>
+        current.map((offer) =>
+          offer.id === offerId ? { ...offer, status: action, review_status: action } : offer
+        )
+      );
+      setSuccess(`Offer marked as ${statusLabel(action)}.`);
     } catch (requestError) {
-      setError(requestError.response?.data?.error || "Failed to mark report as reviewed.");
+      setError(requestError.response?.data?.error || "Failed to update reported offer.");
     } finally {
-      setBusyReportId(null);
+      setBusyOfferId(null);
     }
   };
 
-  const recentReportCount = useMemo(() => (summary?.recent_reports || []).length, [summary]);
+  const statusLabel = (status) => {
+    const normalized = (status || "pending").toLowerCase();
+    if (normalized === "false_positive") {
+      return "False Positive";
+    }
+    if (normalized === "reviewed") {
+      return "Reviewed";
+    }
+    return "Pending";
+  };
+
+  const statusClass = (status) => {
+    const normalized = (status || "pending").toLowerCase();
+    if (normalized === "reviewed") {
+      return "status-badge status-reviewed";
+    }
+    if (normalized === "false_positive") {
+      return "status-badge status-false-positive";
+    }
+    return "status-badge status-pending";
+  };
+
+  const displayedOffers = useMemo(() => {
+    const statusRank = {
+      pending: 0,
+      reviewed: 1,
+      false_positive: 2,
+    };
+    const riskRank = {
+      HIGH: 0,
+      MEDIUM: 1,
+      LOW: 2,
+    };
+
+    let filtered = [...offers];
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(
+        (offer) => (offer.status || offer.review_status || "pending") === filterStatus
+      );
+    }
+
+    if (filterRisk !== "all") {
+      filtered = filtered.filter((offer) => (offer.risk_level || "").toUpperCase() === filterRisk);
+    }
+
+    filtered.sort((a, b) => {
+      if (sortBy === "reports") {
+        return (b.report_count || 0) - (a.report_count || 0);
+      }
+      if (sortBy === "newest") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+
+      const statusDiff =
+        statusRank[(a.status || a.review_status || "pending").toLowerCase()] -
+        statusRank[(b.status || b.review_status || "pending").toLowerCase()];
+      if (statusDiff !== 0) {
+        return statusDiff;
+      }
+
+      const riskDiff = riskRank[(a.risk_level || "LOW").toUpperCase()] - riskRank[(b.risk_level || "LOW").toUpperCase()];
+      if (riskDiff !== 0) {
+        return riskDiff;
+      }
+
+      return (b.report_count || 0) - (a.report_count || 0);
+    });
+
+    return filtered;
+  }, [offers, filterStatus, filterRisk, sortBy]);
 
   return (
     <Layout
-      title="Reported Scams Dashboard"
-      subtitle="Admin visibility into user-submitted scam intelligence and review status."
+      title="Reported Offers"
+      subtitle="Offers with prior community scam reports that require moderation review."
     >
       <header className="topbar">
         <div className="actions">
@@ -59,106 +131,87 @@ export default function AdminScamReportsPage() {
       </header>
 
       {error ? <p className="error">{error}</p> : null}
-
-      <section className="stats-grid">
-        <article className="stat-card">
-          <p className="stat-label">Total Reports</p>
-          <p className="stat-value">{summary?.total_reports ?? 0}</p>
-        </article>
-
-        <article className="stat-card stat-high">
-          <p className="stat-label">Most Reported Domain</p>
-          <p className="stat-value admin-metric-text">{summary?.most_reported_domain || "N/A"}</p>
-          <p className="helper">Count: {summary?.most_reported_domain_count ?? 0}</p>
-        </article>
-
-        <article className="stat-card stat-medium">
-          <p className="stat-label">Recent Reports</p>
-          <p className="stat-value">{recentReportCount}</p>
-        </article>
-
-        <article className="stat-card stat-low">
-          <p className="stat-label">Reviewed</p>
-          <p className="stat-value">{reports.filter((report) => report.status === "reviewed").length}</p>
-        </article>
-      </section>
-
-      <section className="grid-two">
-        <article className="card panel">
-          <h2>Top Reported Domains</h2>
-          <ul className="history-list">
-            {groupedDomains.slice(0, 6).map((entry) => (
-              <li className="history-item" key={entry.domain}>
-                <span>{entry.domain}</span>
-                <span className={entry.report_count >= 3 ? "count-pill count-pill-high" : "count-pill"}>
-                  {entry.report_count}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {groupedDomains.length === 0 ? <p className="helper">No grouped domain data yet.</p> : null}
-        </article>
-
-        <article className="card panel">
-          <h2>Latest Submissions</h2>
-          <ul className="history-list">
-            {(summary?.recent_reports || []).map((report) => (
-              <li className="history-item" key={report.id}>
-                <span>{report.company_name}</span>
-                <span className="helper">{new Date(report.created_at).toLocaleDateString()}</span>
-              </li>
-            ))}
-          </ul>
-          {(summary?.recent_reports || []).length === 0 ? (
-            <p className="helper">No recent reports available.</p>
-          ) : null}
-        </article>
-      </section>
+      {success ? <p className="success-text">{success}</p> : null}
 
       <section className="card panel">
-        <h2>All Reported Scams</h2>
+        <h2>Moderation Queue</h2>
+        <div className="filters-row moderation-filters-row">
+          <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)}>
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="reviewed">Reviewed</option>
+            <option value="false_positive">False Positive</option>
+          </select>
+          <select value={filterRisk} onChange={(event) => setFilterRisk(event.target.value)}>
+            <option value="all">All Risk Levels</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+            <option value="priority">Sort: Pending then High Risk</option>
+            <option value="reports">Sort: Most Reports</option>
+            <option value="newest">Sort: Newest First</option>
+          </select>
+        </div>
 
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Company Name</th>
-                <th>Domain</th>
+                <th>Company</th>
                 <th>Email</th>
-                <th>Reports Count</th>
-                <th>Date</th>
+                <th>Website</th>
+                <th>Risk</th>
+                <th>Report Count</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => {
-                const highCount = report.report_count >= 3;
-                const statusClass = report.status === "reviewed" ? "risk-badge risk-badge-low" : "risk-badge risk-badge-medium";
+              {displayedOffers.map((offer) => {
+                const riskClass =
+                  offer.risk_level === "HIGH"
+                    ? "risk-badge risk-badge-high"
+                    : offer.risk_level === "MEDIUM"
+                    ? "risk-badge risk-badge-medium"
+                    : "risk-badge risk-badge-low";
 
                 return (
-                  <tr key={report.id}>
-                    <td>{report.company_name}</td>
-                    <td>{report.domain || "-"}</td>
-                    <td>{report.email || "-"}</td>
+                  <tr key={offer.id} className="clickable-row" onClick={() => navigate(`/admin/offers/${offer.id}`)}>
+                    <td>{offer.company_name}</td>
+                    <td>{offer.recruiter_email}</td>
+                    <td>{offer.company_website}</td>
                     <td>
-                      <span className={highCount ? "count-pill count-pill-high" : "count-pill"}>
-                        {report.report_count}
+                      <span className={riskClass}>{offer.risk_level}</span>
+                    </td>
+                    <td>
+                      <span className={offer.report_count >= 3 ? "count-pill count-pill-high" : "count-pill"}>
+                        {offer.report_count || 0}
                       </span>
                     </td>
-                    <td>{new Date(report.created_at).toLocaleString()}</td>
                     <td>
-                      <span className={statusClass}>{report.status}</span>
+                      <span className={statusClass(offer.status || offer.review_status)}>
+                        {statusLabel(offer.status || offer.review_status)}
+                      </span>
                     </td>
                     <td>
-                      <div className="actions actions-compact">
+                      <div className="actions actions-compact" onClick={(event) => event.stopPropagation()}>
                         <button
                           type="button"
-                          className="btn-secondary"
-                          disabled={report.status === "reviewed" || busyReportId === report.id}
-                          onClick={() => handleMarkReviewed(report.id)}
+                          className="btn-secondary btn-reviewed"
+                          disabled={busyOfferId === offer.id}
+                          onClick={() => handleAction(offer.id, "reviewed")}
                         >
-                          {busyReportId === report.id ? "Saving..." : "Mark Reviewed"}
+                          {busyOfferId === offer.id ? "Saving..." : "Mark as Reviewed"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary btn-false-positive"
+                          disabled={busyOfferId === offer.id}
+                          onClick={() => handleAction(offer.id, "false_positive")}
+                        >
+                          {busyOfferId === offer.id ? "Saving..." : "Mark as False Positive"}
                         </button>
                       </div>
                     </td>
@@ -169,7 +222,7 @@ export default function AdminScamReportsPage() {
           </table>
         </div>
 
-        {reports.length === 0 ? <p className="helper">No reported scams submitted yet.</p> : null}
+        {displayedOffers.length === 0 ? <p className="helper">No previously reported offers found.</p> : null}
       </section>
     </Layout>
   );

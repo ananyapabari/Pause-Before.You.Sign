@@ -10,12 +10,11 @@ const navItems = [
 
 const adminNavItems = [
   { label: "Admin Dashboard", to: "/admin" },
-  { label: "Reported Scams", to: "/admin/scam-reports" },
+  { label: "Reported Offers", to: "/admin/reported-offers" },
   { label: "Users", to: "/admin/users" },
   { label: "Flagged Offers", to: "/admin/flagged-offers" },
   { label: "Rules", to: "/admin/rules" },
   { label: "Audit Logs", to: "/admin/logs" },
-  { label: "Profile", to: "/profile" },
 ];
 
 export default function Navbar({ onLogout }) {

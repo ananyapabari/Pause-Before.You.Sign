@@ -23,9 +23,15 @@ def _ensure_offer_analysis_columns() -> None:
     statements = [
         "ALTER TABLE offer_analyses ADD COLUMN IF NOT EXISTS scam_type VARCHAR(50)",
         "ALTER TABLE offer_analyses ADD COLUMN IF NOT EXISTS ai_explanation TEXT",
+        "ALTER TABLE offer_analyses ADD COLUMN IF NOT EXISTS review_status VARCHAR(32) DEFAULT 'pending'",
+        "ALTER TABLE offer_analyses ADD COLUMN IF NOT EXISTS reviewed_by INTEGER",
+        "ALTER TABLE offer_analyses ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE",
     ]
     for statement in statements:
         db.session.execute(text(statement))
+    db.session.execute(
+        text("UPDATE offer_analyses SET review_status = 'pending' WHERE review_status IS NULL")
+    )
     db.session.commit()
 
 

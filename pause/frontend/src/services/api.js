@@ -41,6 +41,9 @@ export const scamApi = {
 
 export const adminApi = {
   getDashboard: () => api.get("/admin/dashboard"),
+  getOfferDetail: (offerId) => api.get(`/admin/offers/${offerId}`),
+  reviewOffer: (payload) => api.post("/admin/offers/review", payload),
+  getReportedOffers: () => api.get("/admin/reported-offers"),
   getScamReports: () => api.get("/admin/scam-reports"),
   reviewScamReport: (payload) => api.post("/admin/scam-reports/review", payload),
   getRules: () => api.get("/admin/rules"),

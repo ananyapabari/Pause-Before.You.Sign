@@ -164,6 +164,99 @@ def list_flagged_offers():
     return jsonify(flagged[::-1])
 
 
+@admin_bp.get("/reported-offers")
+@admin_required
+def list_reported_offers():
+    offers = OfferAnalysisRepository.list_all()
+    payload = []
+
+    for offer in offers:
+        report_count = ScamReportRepository.count_for_offer_source(
+            company_website=offer.company_website,
+            recruiter_email=offer.recruiter_email,
+        )
+        if report_count <= 0:
+            continue
+
+        item = offer.to_dict()
+        item["report_count"] = report_count
+        item["is_previously_reported"] = True
+        payload.append(item)
+
+    return jsonify(payload[::-1])
+
+
+@admin_bp.get("/offers/<int:offer_id>")
+@admin_required
+def get_offer_detail(offer_id: int):
+    offer = OfferAnalysisRepository.find_by_id(offer_id)
+    if not offer:
+        return jsonify({"error": "Offer not found"}), 404
+
+    report_count = ScamReportRepository.count_for_offer_source(
+        company_website=offer.company_website,
+        recruiter_email=offer.recruiter_email,
+    )
+
+    return jsonify(
+        {
+            "id": offer.id,
+            "company_name": offer.company_name,
+            "job_description": offer.job_description,
+            "email": offer.recruiter_email,
+            "website": offer.company_website,
+            "risk_score": offer.risk_score,
+            "risk_level": offer.risk_level,
+            "reasons": offer.reasons or [],
+            "ai_explanation": offer.ai_explanation,
+            "report_count": report_count,
+            "is_previously_reported": report_count > 0,
+            "status": offer.status,
+            "reviewed_by": offer.reviewed_by,
+            "reviewed_at": offer.reviewed_at.isoformat() if offer.reviewed_at else None,
+            "created_at": offer.created_at.isoformat() if offer.created_at else None,
+        }
+    )
+
+
+@admin_bp.post("/offers/review")
+@admin_required
+def review_offer():
+    payload = request.get_json(silent=True) or {}
+    offer_id = payload.get("offer_id")
+    action = (payload.get("action") or "").strip().lower()
+
+    if offer_id is None:
+        return jsonify({"error": "offer_id is required"}), 400
+
+    try:
+        offer_id = int(offer_id)
+    except (TypeError, ValueError):
+        return jsonify({"error": "offer_id must be an integer"}), 400
+
+    status_map = {
+        "reviewed": "reviewed",
+        "false_positive": "false_positive",
+    }
+    status = status_map.get(action)
+    if not status:
+        return jsonify({"error": "action must be reviewed or false_positive"}), 400
+
+    offer = OfferAnalysisRepository.mark_review(offer_id, status=status, admin_id=request.user["sub"])
+    if not offer:
+        return jsonify({"error": "Offer not found"}), 404
+
+    AuditLogRepository.add(
+        admin_id=request.user["sub"],
+        action="REVIEW_OFFER",
+        target=f"offer:{offer_id}",
+        target_type="offer",
+        details=f"status={status}",
+    )
+
+    return jsonify(offer.to_dict())
+
+
 @admin_bp.put("/flagged-offers/<int:offer_id>/review")
 @admin_required
 def review_flagged_offer(offer_id: int):
