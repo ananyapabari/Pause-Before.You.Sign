@@ -77,20 +77,28 @@ def create_app() -> Flask:
     app.register_blueprint(scam_bp)
 
     with app.app_context():
-        from models.rule_model import RiskRuleRepository
+     from models.rule_model import RiskRuleRepository
 
+    try:
         db.create_all()
-        try:
-            _ensure_offer_analysis_columns()
-            _ensure_scam_report_columns()
-        except Exception as exc:
-            db.session.rollback()
-            print(f"[DB_MIGRATION_WARNING] Could not apply optional schema updates: {exc}")
+
+        _ensure_offer_analysis_columns()
+        _ensure_scam_report_columns()
+
         RiskRuleRepository.seed_defaults()
+
+    except Exception as exc:
+        print(f"[DATABASE_WARNING] {exc}")
 
     @app.get("/health")
     def health_check():
         return {"status": "ok", "service": "pause-backend"}
+    
+    @app.get("/")
+    def home():
+        return {
+            "message": "Pause Before You Sign Backend is running 🚀"
+        }
 
     return app
 
